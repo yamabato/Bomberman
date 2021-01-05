@@ -29,7 +29,7 @@ class Board:
         self.EXPLOSION_RANGE = 3
 
         RATE = 0.5
-        RATE = 0.95
+        RATE = 0.2
         self.board = [[self.STONE if i*j%2==1 else (self.BRICK if random.random()<=RATE else self.AISLE) for j in range(self.SIZE)] for i in range(self.SIZE)]
         self.timing = [[0 for j in range(self.SIZE)] for i in range(self.SIZE)]
 
