@@ -36,8 +36,8 @@ class Board:
         self.KILL_BLOCK = [self.EXPLOSION, self.EXPLOSION_GROUND]
         self.PLAYER_POS = [
             [0,0],
-            [0,self.SIZE-1],
             [self.SIZE-1,0],
+            [0,self.SIZE-1],
             [self.SIZE-1,self.SIZE-1]
         ]
         self.DIRECTION = [
@@ -94,7 +94,7 @@ class Board:
             if x2_int >= 0 and x2 < self.SIZE and y2_int >= 0 and y2 < self.SIZE:
                 block = self.board[y2_int][x2_int]
                 if block in self.CAN_GO and not self.exist_player(x2_int,y2_int):
-                    self.PLAYER_POS[player - 1] = [x2,y2]
+                    self.PLAYER_POS[player - 1] = [int(x2),int(y2)]
 
         elif direction == 4:
             x,y = self.pos_to_int(place[0]),self.pos_to_int(place[1])

@@ -7,13 +7,18 @@ import copy
 from PIL import Image, ImageTk, ImageChops
 
 from board import Board
+from Model import Model
+from Avoid_Death import Avoid_Death
+from Human import Human
 
-class Draw:
-    def __init__(self,fps):
+class Game:
+    def __init__(self,fps,players):
         self.tk = Tk()
         self.tk.title("Bomberman")
 
         self.FPS = fps
+        self.WAIT = 1.0 / self.FPS
+        self.UPDATE_TICK = 6
 
         self.board = Board(self.FPS)
 
@@ -24,16 +29,7 @@ class Draw:
         self.BRICK_CLR = "#bb5548"
         self.CEMENT_CLR = "#dcdddd"
         self.STONE_CLR = "#9fa0a0"
-        self.PLAYER1_IMG_NAME = "img/mark_face_ase.png"
-        self.PLAYER2_IMG_NAME = "img/mark_face_cry.png"
-        self.PLAYER3_IMG_NAME = "img/mark_face_hehe.png"
-        self.PLAYER4_IMG_NAME = "img/mark_face_jito.png"
-        self.PLAYER1_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER1_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
-        self.PLAYER2_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER2_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
-        self.PLAYER3_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER3_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
-        self.PLAYER4_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER4_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
-        self.PLAYER_IMGs = [self.PLAYER1_IMG,self.PLAYER2_IMG,self.PLAYER3_IMG,self.PLAYER4_IMG]
-        
+                
         self.BOMB_IMG_NAME = "img/bomb.png"
         self.NUKE_IMG_NAME = "img/nuke.png"
         self.EXPLOSION_IMG_NAME = "img/bomb_explode.png"
@@ -57,6 +53,13 @@ class Draw:
         self.EXPLOSION = self.board.EXPLOSION
         self.EXPLOSION_GROUND = self.board.EXPLOSION_GROUND
 
+        self.SPEED = self.board.SPEED
+        self.EXPLOSION_LEFT = self.board.EXPLOSION_LEFT
+        self.BOMB_EXPLODE_TIME = self.board.BOMB_EXPLODE_TIME
+        self.EXPLOSION_RANGE = self.board.EXPLOSION_RANGE
+        self.CAN_GO = self.board.CAN_GO
+        self.KILL_BLOCK = self.board.KILL_BLOCK
+
         self.SIZE = self.board.SIZE
         self.WINDOW_SIZE = self.SIZE * self.BLOCK_SIZE
 
@@ -67,6 +70,7 @@ class Draw:
 
         self.canvas = Canvas(self.tk,width=self.WINDOW_SIZE,height=self.WINDOW_SIZE)
         self.canvas.pack()
+        self.tk.bind("<KeyPress>",lambda e: self.set_key(e))
 
         self.ARROW_DIRECTION = {
             "Up": 0,
@@ -76,12 +80,37 @@ class Draw:
         }
         
         self.key = 0
-        self.tk.bind("<KeyPress>",lambda e: self.set_key(e))
+
+        block_id = {
+            "AISLE": self.AISLE,
+            "BRICK": self.BRICK,
+            "STONE": self.STONE,
+            "PLAYER1": self.PLAYER1,
+            "PLAYER2": self.PLAYER2,
+            "PLAYER3": self.PLAYER3,
+            "PLAYER4": self.PLAYER4,
+            "BOMB": self.BOMB,
+            "EXPLOSION": self.EXPLOSION,
+            "EXPLOSION_GROUND": self.EXPLOSION_GROUND,
+        }
+
+        self.PLAYERS = [players[n](self.tk,n,self.FPS,self.SIZE,self.UPDATE_TICK,block_id,self.SPEED,self.EXPLOSION_LEFT,self.BOMB_EXPLODE_TIME,self.EXPLOSION_RANGE,self.CAN_GO,self.KILL_BLOCK) for n in range(4)]
+
+        self.PLAYER1_IMG_NAME = self.PLAYERS[0].IMG_FILE
+        self.PLAYER2_IMG_NAME = self.PLAYERS[1].IMG_FILE
+        self.PLAYER3_IMG_NAME = self.PLAYERS[2].IMG_FILE
+        self.PLAYER4_IMG_NAME = self.PLAYERS[3].IMG_FILE
+        self.PLAYER1_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER1_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.PLAYER2_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER2_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.PLAYER3_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER3_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.PLAYER4_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER4_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.PLAYER_IMGs = [self.PLAYER1_IMG,self.PLAYER2_IMG,self.PLAYER3_IMG,self.PLAYER4_IMG]
 
         self.draw()
     
     def set_key(self,e):
         self.key = e.keysym
+        if self.key == "q": self.end = True
 
     def block_draw(self):
         for y in range(self.SIZE):
@@ -132,30 +161,47 @@ class Draw:
 
  
     def update(self):
-        if self.key in self.ARROW_DIRECTION:
-            self.board.move(self.ARROW_DIRECTION[self.key],1)
-        elif self.key == "space":
-            self.board.move(4,1)
-        elif self.key == "q":
-            self.end = True
-        self.key = ""
+        if self.clock % (self.FPS // self.UPDATE_TICK)== 0:
+            for n in range(4):
+                if self.board.PLAYER_POS[n][0] == -1: continue
+                board = copy.deepcopy(self.board.board)
+                timing = copy.deepcopy(self.board.timing)
+                players = copy.deepcopy(self.board.PLAYER_POS)
+
+                player = self.PLAYERS[n]
+                try:
+                    command = player.move(board,timing,players,self.clock)
+                except:
+                    print "ERROR AT PLAYER {0}({1}) THINKING".format(n+1,player.__class__.__name__)  
+                    command = -1
+                if command == -1: pass
+                elif command >= 0 and command <= 4: self.board.move(command,n+1)
+
+        self.board.update()
+        self.draw()
+        self.tk.update()
+
+    def game(self):
+        while True:
+            if self.end: return
+            t = time.time()
+
+            self.update()
             
+            now = time.time()
+            diff = now - t
+            if diff < self.WAIT:
+                time.sleep(self.WAIT - diff)
+                        
 
 FPS = 60
-WAIT = 1.0 / FPS
 
-draw = Draw(FPS)
+players = [
+    Model,
+    Avoid_Death,
+    Avoid_Death,
+    Avoid_Death,
+][:4]
+game = Game(FPS,players)
+game.game()
 
-while True:
-    if draw.end: break
-    t = time.time()
-
-    draw.board.update()
-    draw.update()
-    draw.draw()
-    draw.tk.update()
-    
-    now = time.time()
-    diff = now - t
-    if diff < WAIT:
-        time.sleep(WAIT - diff)
