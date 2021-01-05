@@ -1,8 +1,6 @@
 #encoding: utf-8
-from decimal import Decimal
-import subprocess
 import random
-import math
+import subprocess
 
 class Board:
     SIZE = 15
@@ -23,39 +21,18 @@ class Board:
         self.EXPLOSION = 8
         self.EXPLOSION_GROUND = 9
 
-        self.EXPLOSION_LEFT = 1 * self.FPS
-        self.BOMB_EXPLODE_TIME = 1 * self.FPS
-        self.EXPLOSION_RANGE = 3
-
-        self.RATE = 0.5
-        self.RATE = 0.1
-        self.init_board()
-
-        self.SPEED = 1
         self.CAN_GO = [self.AISLE, self.EXPLOSION_GROUND, self.EXPLOSION]
         self.KILL_BLOCK = [self.EXPLOSION, self.EXPLOSION_GROUND]
-        self.PLAYER_POS = [
-            [0,0],
-            [0,self.SIZE-1],
-            [self.SIZE-1,0],
-            [self.SIZE-1,self.SIZE-1]
-        ]
-        self.DIRECTION = [
-            (Decimal(0),Decimal(-self.SPEED), Decimal(0),Decimal(-1+self.SPEED)),
-            (Decimal(-self.SPEED),Decimal(0), Decimal(-1+self.SPEED),Decimal(0)),
-            (Decimal(self.SPEED),Decimal(0),  Decimal(0),Decimal(0)),
-            (Decimal(0),Decimal(self.SPEED),  Decimal(0),Decimal(0)),
-        ]
-        self.TOUCH_BLOCKS = [
-            (lambda x: int(x), lambda x: int(x)),
-            (lambda x: int(x+Decimal(0.5)), lambda x: int(x)),
-            (lambda x: int(x), lambda x: int(x+Decimal(0.5))),
-            (lambda x: int(x+Decimal(0.5)), lambda x:int(x+Decimal(0.5))),
-        ]
 
-    def init_board(self):
-        self.board = [[self.STONE if i*j%2==1 else (self.BRICK if random.random()<=self.RATE else self.AISLE) for j in range(self.SIZE)] for i in range(self.SIZE)]
+        self.EXPLOSION_LEFT = 1 * self.FPS
+        self.BOMB_EXPLODE_TIME = 2 * self.FPS
+        self.EXPLOSION_RANGE = 3
+
+        RATE = 0.5
+        RATE = 0.6
+        self.board = [[self.STONE if i*j%2==1 else (self.BRICK if random.random()<=RATE else self.AISLE) for j in range(self.SIZE)] for i in range(self.SIZE)]
         self.timing = [[0 for j in range(self.SIZE)] for i in range(self.SIZE)]
+        self.board = [[self.BRICK for j in range(self.SIZE)] for i in range(self.SIZE)]
 
         self.board[0][0] = self.AISLE
         self.board[0][self.SIZE-1] = self.AISLE
@@ -71,6 +48,14 @@ class Board:
         self.board[self.SIZE-2][self.SIZE-1] = self.AISLE
         self.board[self.SIZE-1][self.SIZE-2] = self.AISLE
 
+        self.SPEED = 0.2
+
+        self.PLAYER_POS = [
+            [0,0],
+            [0,self.SIZE-1],
+            [self.SIZE-1,0],
+            [self.SIZE-1,self.SIZE-1]
+        ]
 
     def move(self,direction,player):
         """
@@ -86,20 +71,33 @@ class Board:
             return
 
         block = -1
-
-        if direction >= 0 and direction <= 3:
-            x2,y2 = Decimal(place[0]) + self.DIRECTION[direction][0],Decimal(place[1]) + self.DIRECTION[direction][1]
-            x2_int,y2_int = self.pos_to_int(x2+self.DIRECTION[direction][2]),self.pos_to_int(y2+self.DIRECTION[direction][3])
-
-            if x2_int >= 0 and x2 < self.SIZE and y2_int >= 0 and y2 < self.SIZE:
-                block = self.board[y2_int][x2_int]
-                if block in self.CAN_GO and not self.exist_player(x2_int,y2_int):
-                    self.PLAYER_POS[player - 1] = [x2,y2]
-
+        if direction == 0:
+            if place[1] > 0:
+                x2,y2 = int(round(place[0])),int(round(place[1]-self.SPEED))
+                block = self.board[place[1]-1][place[0]]
+                if block in self.CAN_GO and not self.exist_player(place[0],place[1]-1):
+                    self.PLAYER_POS[player - 1] = [place[0],place[1]-self.SPEED]
+        elif direction == 1:
+            if place[0] > 0:
+                x2,y2 = int(round(place[0]-self.SPEED)),int(round(self.SPEED[1]))
+                block = self.board[place[1]][place[0]-1]
+                if block in self.CAN_GO and not self.exist_player(place[0]-1,place[1]):
+                    self.PLAYER_POS[player - 1] = [place[0]-self.SPEED,place[1]]
+        elif direction == 2:
+            if place[0] < self.SIZE - 1:
+                x2,y2 = int(round(place[0]+self.SPEED)),int(round(self.SPEED[1]))
+                block = self.board[place[1]][place[0]+1]
+                if block in self.CAN_GO and not self.exist_player(place[0]+1,place[1]):
+                    self.PLAYER_POS[player - 1] = [place[0]+self.SPEED,place[1]]
+        elif direction == 3:
+            if place[1] < self.SIZE - 1:
+                x2,y2 = int(round(place[0])),int(round(self.SPEED[1]+self.SPEED))
+                block = self.board[place[1]+1][place[0]]
+                if block in self.CAN_GO and not self.exist_player(place[0],place[1]+1):
+                    self.PLAYER_POS[player - 1] = [place[0],place[1]+self.SPEED]
         elif direction == 4:
-            x,y = self.pos_to_int(place[0]),self.pos_to_int(place[1])
-            self.board[y][x] = self.BOMB
-            self.timing[y][x] = self.BOMB_EXPLODE_TIME
+            self.board[place[1]][place[0]] = self.BOMB
+            self.timing[place[1]][place[0]] = self.BOMB_EXPLODE_TIME
 
     def exist_player(self,x,y):
         count = 1
@@ -127,16 +125,12 @@ class Board:
 
         for n in range(4):
             x,y = self.PLAYER_POS[n]
+            x = int(round(x))
+            y = int(round(y))
             if x == -1:
                 continue
-
-            touch_blocks = set([(int(d[0](x)),int(d[1](y))) for d in self.TOUCH_BLOCKS])
-
-            for t in touch_blocks:
-                x2,y2 = t
-                if self.board[y2][x2] in self.KILL_BLOCK:
-                    self.PLAYER_POS[n] = [-1, -1]
-                    break
+            if self.board[y][x] in self.KILL_BLOCK:
+                self.PLAYER_POS[n] = [-1, -1]
 
     def explode(self,x,y):
         subprocess.Popen(["afplay","sound/bomb.mp3"])
@@ -170,9 +164,6 @@ class Board:
     def set_explosion(self,x,y):
         self.board[y][x] = self.EXPLOSION
         self.timing[y][x] = self.EXPLOSION_LEFT
-
-    def pos_to_int(self,v):
-        return int(math.ceil(v))
 
                 
 

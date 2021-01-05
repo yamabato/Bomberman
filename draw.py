@@ -82,11 +82,8 @@ class Draw:
     
     def set_key(self,e):
         self.key = e.keysym
-        print self.key
 
     def block_draw(self):
-        bomb_size_gap = self.BLOCK_SIZE//20 if (self.clock//30)%2==0 else 0
-        bomb_img = self.BOMB_IMG_mini if (self.clock//30)%2==0 else self.BOMB_IMG
         for y in range(self.SIZE):
             for x in range(self.SIZE):
                 block = self.board.board[y][x]
@@ -103,7 +100,14 @@ class Draw:
                                 x*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*3,
                                 y*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*(i+1),
                                 fill=self.BRICK_CLR,outline=self.CEMENT_CLR,width=1)
-                elif block == self.BOMB:
+
+    def object_draw(self):
+        bomb_size_gap = self.BLOCK_SIZE//20 if (self.clock//30)%2==0 else 0
+        bomb_img = self.BOMB_IMG_mini if (self.clock//30)%2==0 else self.BOMB_IMG
+        for y in range(self.SIZE):
+            for x in range(self.SIZE):
+                block = self.board.board[y][x]
+                if block == self.BOMB:
                     self.canvas.create_rectangle(x*self.BLOCK_SIZE,y*self.BLOCK_SIZE,(x+1)*self.BLOCK_SIZE,(y+1)*self.BLOCK_SIZE,fill=self.BG_CLR,width=0)
                     self.canvas.create_image(
                             x*self.BLOCK_SIZE+self.BLOCK_SIZE//2+bomb_size_gap,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2+bomb_size_gap,
@@ -111,21 +115,22 @@ class Draw:
                 elif block >= self.EXPLOSION and block <= self.EXPLOSION_GROUND:
                     self.canvas.create_image(x*self.BLOCK_SIZE+self.BLOCK_SIZE//2,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2,image=self.EXPLOSION_IMGs[block-self.EXPLOSION])
 
-    def draw(self):
-        self.canvas.delete("all")
-        self.block_draw()
-        self.player_draw()
-        self.tk.update()
-
-        self.clock += 1
-        
-
     def player_draw(self):
         for n in range(4):
             x,y = self.board.PLAYER_POS[n]
             if x == -1: continue
             self.canvas.create_image(x*self.BLOCK_SIZE+self.BLOCK_SIZE//2,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2,image=self.PLAYER_IMGs[n])
 
+    def draw(self):
+        self.canvas.delete("all")
+        self.block_draw()
+        self.object_draw()
+        self.player_draw()
+        self.tk.update()
+
+        self.clock += 1
+
+ 
     def update(self):
         if self.key in self.ARROW_DIRECTION:
             self.board.move(self.ARROW_DIRECTION[self.key],1)
