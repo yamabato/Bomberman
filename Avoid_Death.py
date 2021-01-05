@@ -6,7 +6,9 @@ from Model import Model
 
 class Avoid_Death(Model):
     def init(self):
-        self.IMG_FILE = os.getcwd() + "/img/mark_face_tere.png"
+        imgs = ["hamster","ninja","mark_face_odoroki"]
+        img = random.choice(imgs)
+        self.IMG_FILE = os.getcwd() + "/img/" + img+".png"
         self.PLACE_BOMB_RATE = 0.05
 
     def calc_explosion_place(self,board,timing):

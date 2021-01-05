@@ -70,9 +70,12 @@ class Model:
             return True
 
     def move(self,board,timing,players,count):
-        if self.can_go(players[self.ID],board,players,0): return 0
-        elif self.can_go(players[self.ID],board,players,1): return 1
-        elif self.can_go(players[self.ID],board,players,2): return 2
-        elif self.can_go(players[self.ID],board,players,3): return 3
+        commands = []
+        for d in range(4):
+            if self.can_go(players[self.ID],board,players,d):
+                commands.append(d)
+
+        if commands: return random.choice(commands)
+        return -1
 
 

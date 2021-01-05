@@ -28,7 +28,7 @@ class Board:
         self.EXPLOSION_RANGE = 3
 
         self.RATE = 0.5
-        self.RATE = 0.1
+        self.RATE = 0
         self.init_board()
 
         self.SPEED = 1

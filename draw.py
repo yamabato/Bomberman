@@ -161,6 +161,7 @@ class Game:
 
  
     def update(self):
+        self.board.update()
         if self.clock % (self.FPS // self.UPDATE_TICK)== 0:
             for n in range(4):
                 if self.board.PLAYER_POS[n][0] == -1: continue
@@ -177,7 +178,6 @@ class Game:
                 if command == -1: pass
                 elif command >= 0 and command <= 4: self.board.move(command,n+1)
 
-        self.board.update()
         self.draw()
         self.tk.update()
 
@@ -197,10 +197,10 @@ class Game:
 FPS = 60
 
 players = [
+    Avoid_Death,
+    Avoid_Death,
+    Avoid_Death,
     Model,
-    Avoid_Death,
-    Avoid_Death,
-    Avoid_Death,
 ][:4]
 game = Game(FPS,players)
 game.game()
