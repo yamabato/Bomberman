@@ -9,7 +9,10 @@ class Avoid_Death(Model):
         imgs = ["hamster","ninja","mark_face_odoroki"]
         img = random.choice(imgs)
         self.IMG_FILE = os.getcwd() + "/img/" + img+".png"
-        self.PLACE_BOMB_RATE = 0.05
+        self.PLACE_BOMB_RATE = 0.01
+
+        self.LAST_MOVE = [0,0]
+        self.LAST_BOARD = []
 
     def calc_explosion_place(self,board,timing):
         place = [[0 for j in range(self.SIZE)] for i in range(self.SIZE)]
@@ -20,8 +23,9 @@ class Avoid_Death(Model):
                 if block == self.BOMB:
                     for d in self.DIRECTIONS:
                         ax,ay = d
+                        x2,y2 = x,y
                         for i in range(self.EXPLOSION_RANGE):
-                            x2,y2 = x+ax, y+ay
+                            x2,y2 = x2+ax, y2+ay
                             if x2 < 0 or x2 >= self.SIZE or y2 < 0 or y2 >= self.SIZE:
                                 break
                             if board[y2][x2] == self.AISLE:
@@ -30,34 +34,78 @@ class Avoid_Death(Model):
                                 break
         return place
  
-    def avoid(self,pos,board,timing,direction):
+    def eval_move(self,pos,board,timing,direction):
         x,y = pos
         x2,y2 = x+self.DIRECTIONS[direction][0], y+self.DIRECTIONS[direction][1]
         
-        if board[y][x] == self.BOMB: return True
-
         block = board[y2][x2]
-        if block in self.KILL_BLOCK: return False
-        if timing[y2][x2] != 0: return False
+        if block in self.KILL_BLOCK: return -1
+        if self.LAST_BOARD and self.LAST_BOARD[y2][x2] in self.KILL_BLOCK: return -1
+
+        if board[y][x] == self.BOMB:
+            if board[y2][x2] == self.AISLE:
+                return 20
+            return 15
 
         explosion_place = self.calc_explosion_place(board,timing)
-        if explosion_place[y2][x2] > 0: return False
+        if explosion_place[y2][x2]: return -1
+        if explosion_place[y][x]:
+            if not explosion_place[y2][x2]: return 25
+            if explosion_place[y2][x2] > explosion_place[y][x]: return 15
 
-        return True
+            nearest_bomb = self.find_nearest_bomb(board,pos)
+            if nearest_bomb[1][0] != -1:
+                bx, by = nearest_bomb[1]
+                if (x2 - bx)**2 + (y2 - by)**2 > (x - bx)**2 + (y - by)**2: return 15
 
-    def move(self,board,timing,players,count):
+
+        return 10
+
+    def find_nearest_bomb(self,board,pos):
+        px,py = pos
+        bomb = [float("inf"),(-1,-1)]
+
+        for y in range(self.SIZE):
+            for x in range(self.SIZE):
+                block = board[y][x]
+                if block == self.BOMB:
+                    distance = (px - x) ** 2 + (py - y) ** 2
+                    if distance < bomb[0]: bomb = [distance, (x,y)]
+        return bomb
+
+    def avoid(self,board,timing,players,count):
+        command = None
         commands = []
         pos = players[self.ID]
-        for n in range(4):
+
+        for n in range(-1,4):
             if self.can_go(pos,board,players,n):
-                if self.avoid(pos,board,timing,n):
-                    commands.append(n)
+                v =  self.eval_move(pos,board,timing,n)
+                commands.append([n,v])
 
-        if not commands: return -1
+                if n == -1 and v>0 and self.LAST_MOVE[0] != -1 and self.LAST_MOVE[-1] == -1:
+                    command = -1
+                    break
 
-        if random.random() < self.PLACE_BOMB_RATE: return 4
+        if not commands: commands.append([-1,0])
+        if command is None and random.random() < self.PLACE_BOMB_RATE: command = 4
 
-        return random.choice(commands)
+        random.shuffle(commands)
+        commands.sort(key=lambda x:x[1])
 
+        if command is None: command = commands[-1][0]
 
+#        print commands
+        self.LAST_BOARD = board
+            
+        return command,commands
+
+    def move(self,board,timing,players,count):
+        command,commands = self.avoid(board,timing,players,count)
+        self.LAST_MOVE = self.LAST_MOVE[1:] + [command]
+
+        if command is None:
+            if random.random() < self.PLACE_BOMB_RATE: return 4
+            else: return commands[-1][0]
+        return command
 

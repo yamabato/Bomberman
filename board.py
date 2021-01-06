@@ -28,7 +28,7 @@ class Board:
         self.EXPLOSION_RANGE = 3
 
         self.RATE = 0.5
-        self.RATE = 0
+        self.RATE = 0.1
         self.init_board()
 
         self.SPEED = 1
@@ -70,7 +70,6 @@ class Board:
         self.board[self.SIZE-1][1] = self.AISLE
         self.board[self.SIZE-2][self.SIZE-1] = self.AISLE
         self.board[self.SIZE-1][self.SIZE-2] = self.AISLE
-
 
     def move(self,direction,player):
         """

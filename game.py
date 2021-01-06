@@ -9,6 +9,7 @@ from PIL import Image, ImageTk, ImageChops
 from board import Board
 from Model import Model
 from Avoid_Death import Avoid_Death
+from RandomWalk import RandomWalk
 from Human import Human
 
 class Game:
@@ -18,7 +19,7 @@ class Game:
 
         self.FPS = fps
         self.WAIT = 1.0 / self.FPS
-        self.UPDATE_TICK = 6
+        self.UPDATE_TICK = 10
 
         self.board = Board(self.FPS)
 
@@ -29,11 +30,21 @@ class Game:
         self.BRICK_CLR = "#bb5548"
         self.CEMENT_CLR = "#dcdddd"
         self.STONE_CLR = "#9fa0a0"
+
+        self.stone_img = True
+        self.brick_img = True
+        self.aisle_img = False
                 
+        self.BRICK_IMG_NAME = "img/nature_stone_iwa.png"
+        self.STONE_IMG_NAME = "img/bg_pattern_ishigaki.jpg"
+        self.AISLE_IMG_NAME = "img/pattern_shibafu.png"
         self.BOMB_IMG_NAME = "img/bomb.png"
         self.NUKE_IMG_NAME = "img/nuke.png"
         self.EXPLOSION_IMG_NAME = "img/bomb_explode.png"
         self.EXPLOSION_GROUND_IMG_NAME = "img/bomb_explode_ground.png"
+        self.BRICK_IMG = ImageTk.PhotoImage(Image.open(self.BRICK_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.STONE_IMG = ImageTk.PhotoImage(Image.open(self.STONE_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
+        self.AISLE_IMG = ImageTk.PhotoImage(Image.open(self.AISLE_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
         self.BOMB_IMG = ImageTk.PhotoImage(Image.open(self.BOMB_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
         self.BOMB_IMG_mini = ImageTk.PhotoImage(Image.open(self.BOMB_IMG_NAME).resize((int(self.BLOCK_SIZE*0.9),int(self.BLOCK_SIZE*0.9))))
         self.NUKE_IMG = ImageTk.PhotoImage(Image.open(self.NUKE_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
@@ -105,7 +116,7 @@ class Game:
         self.PLAYER3_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER3_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
         self.PLAYER4_IMG = ImageTk.PhotoImage(Image.open(self.PLAYER4_IMG_NAME).resize((self.BLOCK_SIZE,self.BLOCK_SIZE)))
         self.PLAYER_IMGs = [self.PLAYER1_IMG,self.PLAYER2_IMG,self.PLAYER3_IMG,self.PLAYER4_IMG]
-
+        
         self.draw()
     
     def set_key(self,e):
@@ -118,20 +129,35 @@ class Game:
                 block = self.board.board[y][x]
 
                 if block == self.AISLE:
-                    self.canvas.create_rectangle(x*self.BLOCK_SIZE,y*self.BLOCK_SIZE,(x+1)*self.BLOCK_SIZE,(y+1)*self.BLOCK_SIZE,fill=self.BG_CLR,width=0)
+                    if self.aisle_img:
+                        self.canvas.create_image(
+                            x*self.BLOCK_SIZE+self.BLOCK_SIZE//2,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2,
+                            image=self.AISLE_IMG)
+                    else:
+                        self.canvas.create_rectangle(x*self.BLOCK_SIZE,y*self.BLOCK_SIZE,(x+1)*self.BLOCK_SIZE,(y+1)*self.BLOCK_SIZE,fill=self.BG_CLR,width=0)
                 elif block == self.STONE:
-                    self.canvas.create_rectangle(x*self.BLOCK_SIZE,y*self.BLOCK_SIZE,(x+1)*self.BLOCK_SIZE,(y+1)*self.BLOCK_SIZE,fill=self.STONE_CLR,outline="black",width=2)
+                    if self.stone_img:
+                        self.canvas.create_image(
+                            x*self.BLOCK_SIZE+self.BLOCK_SIZE//2,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2,
+                            image=self.STONE_IMG)
+                    else:
+                        self.canvas.create_rectangle(x*self.BLOCK_SIZE,y*self.BLOCK_SIZE,(x+1)*self.BLOCK_SIZE,(y+1)*self.BLOCK_SIZE,fill=self.STONE_CLR,outline="black",width=2)
                 elif block == self.BRICK:
-                    for i in  range(3):
-                        self.canvas.create_rectangle(
-                                x*self.BLOCK_SIZE,
-                                y*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*i,
-                                x*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*3,
-                                y*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*(i+1),
-                                fill=self.BRICK_CLR,outline=self.CEMENT_CLR,width=1)
+                    if self.brick_img:
+                        self.canvas.create_image(
+                            x*self.BLOCK_SIZE+self.BLOCK_SIZE//2,y*self.BLOCK_SIZE+self.BLOCK_SIZE//2,
+                            image=self.BRICK_IMG)
+                    else:
+                        for i in  range(3):
+                            self.canvas.create_rectangle(
+                                    x*self.BLOCK_SIZE,
+                                    y*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*i,
+                                    x*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*3,
+                                    y*self.BLOCK_SIZE+(self.BLOCK_SIZE//3)*(i+1),
+                                    fill=self.BRICK_CLR,outline=self.CEMENT_CLR,width=1)
 
     def object_draw(self):
-        bomb_size_gap = self.BLOCK_SIZE//20 if (self.clock//30)%2==0 else 0
+        bomb_size_gap = self.BLOCK_SIZE//20 if (self.clock//20)%2==0 else 0
         bomb_img = self.BOMB_IMG_mini if (self.clock//30)%2==0 else self.BOMB_IMG
         for y in range(self.SIZE):
             for x in range(self.SIZE):
@@ -173,7 +199,7 @@ class Game:
                 try:
                     command = player.move(board,timing,players,self.clock)
                 except:
-                    print "ERROR AT PLAYER {0}({1}) THINKING".format(n+1,player.__class__.__name__)  
+                    print "ERROR: PLAYER{0}({1})".format(n+1,player.__class__.__name__)  
                     command = -1
                 if command == -1: pass
                 elif command >= 0 and command <= 4: self.board.move(command,n+1)
@@ -196,12 +222,17 @@ class Game:
 
 FPS = 60
 
+player1 = Human
+player2 = Model
+player3 = Model
+player4 = Avoid_Death
 players = [
-    Avoid_Death,
-    Avoid_Death,
-    Avoid_Death,
-    Model,
-][:4]
+    player1,
+    player2,
+    player3,
+    player4,
+]
+
 game = Game(FPS,players)
 game.game()
 

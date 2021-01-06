@@ -19,7 +19,7 @@ class Human(Model):
     def choice_img(self):
         tk = Tk()
         tk.withdraw()
-        file_type = [("","*.png")]
+        file_type = [("","*.png"),("","*.jpg")]
 
         file_name = ""
 

@@ -45,6 +45,7 @@ class Model:
             (-1,0),
             (1,0),
             (0,1),
+            (0,0),
         ]
 
         self.init()
@@ -70,12 +71,6 @@ class Model:
             return True
 
     def move(self,board,timing,players,count):
-        commands = []
-        for d in range(4):
-            if self.can_go(players[self.ID],board,players,d):
-                commands.append(d)
-
-        if commands: return random.choice(commands)
-        return -1
+       return -1
 
 
