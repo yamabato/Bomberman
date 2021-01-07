@@ -6,8 +6,9 @@ import math
 
 class Board:
     SIZE = 15
-    def __init__(self,fps):
+    def __init__(self,fps,tick):
         self.FPS = fps
+        self.TICK = tick
 
         #0:無 1:壁 2:レンガ
         self.AISLE = 0
@@ -23,12 +24,12 @@ class Board:
         self.EXPLOSION = 8
         self.EXPLOSION_GROUND = 9
 
-        self.EXPLOSION_LEFT = 1 * self.FPS
-        self.BOMB_EXPLODE_TIME = 1 * self.FPS
+        self.EXPLOSION_LEFT = 1 * self.TICK
+        self.BOMB_EXPLODE_TIME = 1 * self.TICK
         self.EXPLOSION_RANGE = 3
 
         self.RATE = 0.5
-        self.RATE = 0.1
+        self.RATE = 0.2
         self.init_board()
 
         self.SPEED = 1
@@ -70,6 +71,12 @@ class Board:
         self.board[self.SIZE-1][1] = self.AISLE
         self.board[self.SIZE-2][self.SIZE-1] = self.AISLE
         self.board[self.SIZE-1][self.SIZE-2] = self.AISLE
+
+    def show(self):
+        for y in range(self.SIZE):
+            for x in range(self.SIZE):
+                print self.board[y][x],
+            print
 
     def move(self,direction,player):
         """
@@ -172,6 +179,3 @@ class Board:
 
     def pos_to_int(self,v):
         return int(math.ceil(v))
-
-                
-

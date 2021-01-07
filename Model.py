@@ -34,10 +34,15 @@ class Model:
 
         self.ARROW_COMMAND = {
             "Up": 0,
+            "w": 0,
             "Left": 1,
+            "a": 1,
             "Right": 2,
+            "d": 2,
             "Down": 3,
+            "s": 3,
             "space": 4,
+            "Return": 4,
         }
 
         self.DIRECTIONS = [
@@ -69,6 +74,7 @@ class Model:
                 if px == x2 and py == y2:
                     return False
             return True
+        if board[y2][x2] == self.BOMB and direction == -1: return True
 
     def move(self,board,timing,players,count):
        return -1

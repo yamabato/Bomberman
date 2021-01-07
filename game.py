@@ -21,7 +21,7 @@ class Game:
         self.WAIT = 1.0 / self.FPS
         self.UPDATE_TICK = 10
 
-        self.board = Board(self.FPS)
+        self.board = Board(self.FPS,self.UPDATE_TICK)
 
         self.RANDOM_CONST = random.random()
 
@@ -31,7 +31,7 @@ class Game:
         self.CEMENT_CLR = "#dcdddd"
         self.STONE_CLR = "#9fa0a0"
 
-        self.stone_img = True
+        self.stone_img = False
         self.brick_img = True
         self.aisle_img = False
                 
@@ -187,13 +187,13 @@ class Game:
 
  
     def update(self):
-        self.board.update()
-        if self.clock % (self.FPS // self.UPDATE_TICK)== 0:
+        if self.clock % (self.FPS // self.UPDATE_TICK) == 0:
+            self.board.update()
+            players = copy.deepcopy(self.board.PLAYER_POS)
             for n in range(4):
                 if self.board.PLAYER_POS[n][0] == -1: continue
                 board = copy.deepcopy(self.board.board)
                 timing = copy.deepcopy(self.board.timing)
-                players = copy.deepcopy(self.board.PLAYER_POS)
 
                 player = self.PLAYERS[n]
                 try:
@@ -223,9 +223,9 @@ class Game:
 FPS = 60
 
 player1 = Human
-player2 = Model
-player3 = Model
-player4 = Avoid_Death
+player2 = Avoid_Death
+player3 = Avoid_Death
+player4 = RandomWalk
 players = [
     player1,
     player2,

@@ -13,6 +13,8 @@ class Avoid_Death(Model):
 
         self.LAST_MOVE = [0,0]
         self.LAST_BOARD = []
+        self.LAST_TIMING = []
+        self.LAST_EXPLOSION_PLACE = []
 
     def calc_explosion_place(self,board,timing):
         place = [[0 for j in range(self.SIZE)] for i in range(self.SIZE)]
@@ -34,21 +36,47 @@ class Avoid_Death(Model):
                                 break
         return place
  
-    def eval_move(self,pos,board,timing,direction):
+    def eval_move(self,pos,board,timing,explosion_place,direction):
         x,y = pos
         x2,y2 = x+self.DIRECTIONS[direction][0], y+self.DIRECTIONS[direction][1]
         
         block = board[y2][x2]
         if block in self.KILL_BLOCK: return -1
         if self.LAST_BOARD and self.LAST_BOARD[y2][x2] in self.KILL_BLOCK: return -1
+        if self.LAST_TIMING and self.LAST_TIMING[y2][x2] > 0: return 3
 
         if board[y][x] == self.BOMB:
             if board[y2][x2] == self.AISLE:
-                return 20
+                space = 0
+                for d in self.DIRECTIONS:
+                    x3,y3 = x2 + d[0], y2 + d[1]
+                    if x3 >= 0 and x3 < self.SIZE and y3 >= 0 and y3 < self.SIZE:
+                        if board[y3][x3] == self.AISLE: space += 1
+
+                if space >= 2: return 20
+                return 18
             return 15
 
-        explosion_place = self.calc_explosion_place(board,timing)
-        if explosion_place[y2][x2]: return -1
+
+        result = self.check_explosion_place(pos,(x2,y2),board,explosion_place)
+        if result is not None: return result
+
+        if self.LAST_EXPLOSION_PLACE:
+            result = self.check_explosion_place(pos,(x2,y2),board,self.LAST_EXPLOSION_PLACE)
+        if result is not None: return result // 2
+
+        space = 0
+        for d in self.DIRECTIONS[:-1]:
+            x3,y3 = x2 + d[0], y2 + d[1]
+            if x3 >= 0 and x3 < self.SIZE and y3 >= 0 and y3 < self.SIZE:
+                if board[y3][x3] == self.AISLE: space += 1
+
+        if space >= 2: return 10
+        return 5
+
+    def check_explosion_place(self,pos,pos2,board,explosion_place):
+        x,y = pos
+        x2,y2 = pos2
         if explosion_place[y][x]:
             if not explosion_place[y2][x2]: return 25
             if explosion_place[y2][x2] > explosion_place[y][x]: return 15
@@ -57,10 +85,11 @@ class Avoid_Death(Model):
             if nearest_bomb[1][0] != -1:
                 bx, by = nearest_bomb[1]
                 if (x2 - bx)**2 + (y2 - by)**2 > (x - bx)**2 + (y - by)**2: return 15
+        if explosion_place[y2][x2]: return 2
 
+        return None
 
-        return 10
-
+ 
     def find_nearest_bomb(self,board,pos):
         px,py = pos
         bomb = [float("inf"),(-1,-1)]
@@ -77,10 +106,11 @@ class Avoid_Death(Model):
         command = None
         commands = []
         pos = players[self.ID]
+        explosion_place = self.calc_explosion_place(board,timing)
 
         for n in range(-1,4):
             if self.can_go(pos,board,players,n):
-                v =  self.eval_move(pos,board,timing,n)
+                v =  self.eval_move(pos,board,timing,explosion_place,n)
                 commands.append([n,v])
 
                 if n == -1 and v>0 and self.LAST_MOVE[0] != -1 and self.LAST_MOVE[-1] == -1:
@@ -95,8 +125,11 @@ class Avoid_Death(Model):
 
         if command is None: command = commands[-1][0]
 
-#        print commands
+        print self.ID, commands
+
         self.LAST_BOARD = board
+        self.LAST_TIMING = timing
+        self.LAST_EXPLOSION_PLACE = explosion_place
             
         return command,commands
 
