@@ -1,16 +1,13 @@
 #encoding: utf-8
 from tkinter import *
 import random
+import json
 import time
 import copy
 
 from PIL import Image, ImageTk, ImageChops
 
 from board import Board
-from Model import Model
-from Avoid_Death import Avoid_Death
-from RandomWalk import RandomWalk
-from Human import Human
 
 class Game:
     def __init__(self,fps,players):
@@ -26,12 +23,12 @@ class Game:
         self.RANDOM_CONST = random.random()
 
         self.BLOCK_SIZE = 50
-        self.BG_CLR = "#98d98e"
+        self.BG_CLR = "#8ed998"
         self.BRICK_CLR = "#bb5548"
         self.CEMENT_CLR = "#dcdddd"
         self.STONE_CLR = "#9fa0a0"
 
-        self.stone_img = False
+        self.stone_img = True
         self.brick_img = True
         self.aisle_img = False
                 
@@ -219,13 +216,20 @@ class Game:
             if diff < self.WAIT:
                 time.sleep(self.WAIT - diff)
                         
+def load_classes():
+    with open("Classes.json", mode="r") as f:
+        class_list = json.load(f)
+    for c in class_list:
+        globals()[c] = getattr(__import__(c),c)
+
+load_classes()
 
 FPS = 60
 
 player1 = Human
-player2 = Avoid_Death
+player2 = RandomWalk
 player3 = Avoid_Death
-player4 = RandomWalk
+player4 = Avoid_Death
 players = [
     player1,
     player2,
