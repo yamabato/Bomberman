@@ -9,7 +9,7 @@ class Avoid_Death(Model):
         imgs = ["hamster","ninja","mark_face_odoroki"]
         img = random.choice(imgs)
         self.IMG_FILE = os.getcwd() + "/img/" + img+".png"
-        self.PLACE_BOMB_RATE = 0.01
+        self.PLACE_BOMB_RATE = 0.05
 
         self.LAST_MOVE = [0,0]
         self.LAST_BOARD = []

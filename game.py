@@ -26,7 +26,7 @@ class Game:
         self.RANDOM_CONST = random.random()
 
         self.BLOCK_SIZE = 50
-        self.BG_CLR = "#98d98e"
+        self.BG_CLR = "#8ed998"
         self.BRICK_CLR = "#bb5548"
         self.CEMENT_CLR = "#dcdddd"
         self.STONE_CLR = "#9fa0a0"
@@ -225,7 +225,7 @@ FPS = 60
 player1 = Human
 player2 = Avoid_Death
 player3 = Avoid_Death
-player4 = RandomWalk
+player4 = Avoid_Death
 players = [
     player1,
     player2,
