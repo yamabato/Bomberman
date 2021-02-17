@@ -6,7 +6,7 @@ from Model import Model
 
 class Avoid_Death(Model):
     def init(self):
-        imgs = ["hamster","ninja","mark_face_odoroki"]
+        imgs = ["hamster","ninja","mark_face_odoroki","engiri_mark","food_fish_hiraki","nature_stone_iwa"]
         img = random.choice(imgs)
         self.IMG_FILE = os.getcwd() + "/img/" + img+".png"
         self.PLACE_BOMB_RATE = 0.05
